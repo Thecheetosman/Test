@@ -479,50 +479,77 @@ export const FlatMapView: React.FC<FlatMapViewProps> = ({
     setZoom((prev) => Math.max(0.75, Math.min(4.0, prev + zoomDelta)));
   };
 
-  // High-Resolution Map PNG Export (Generates a clean 3840x2160 or 2560x1440 print cartography map)
+  // Clean High-Resolution Map PNG Export
   const handleExportPNG = async () => {
     setIsExporting(true);
+    
+    // Give UI thread a tiny breather to show "Generating..." button state
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
     try {
       const exportCanvas = document.createElement('canvas');
-      const exWidth = 3200;
-      const exHeight = 1800;
+      // Scaled down dimensions slightly to prevent Chromebook memory thrashing while preserving 1080p+ detail
+      const exWidth = 2560;
+      const exHeight = 1440;
       exportCanvas.width = exWidth;
       exportCanvas.height = exHeight;
       const exCtx = exportCanvas.getContext('2d');
       if (!exCtx) return;
 
-      // Draw high-res equirectangular or selected projection
       exCtx.fillStyle = '#020617';
       exCtx.fillRect(0, 0, exWidth, exHeight);
 
       const exImgData = exCtx.createImageData(exWidth, exHeight);
       const exData = exImgData.data;
 
-      for (let y = 0; y < exHeight; y++) {
-        for (let x = 0; x < exWidth; x++) {
+      // Step size 2 for export cuts CPU calculations in half while maintaining high detail
+      const step = 2;
+
+      for (let y = 0; y < exHeight; y += step) {
+        for (let x = 0; x < exWidth; x += step) {
           const { lat, lon, valid } = inverseProjectXYToLatLon(x, y, exWidth, exHeight, projection);
           if (valid) {
             const sample = engineRef.current.sample(lat, lon);
-            const [r, g, b] = getPixelColor(sample, overlay, style);
-            const idx = (y * exWidth + x) * 4;
-            exData[idx] = r;
-            exData[idx + 1] = g;
-            exData[idx + 2] = b;
-            exData[idx + 3] = 255;
+            const [r, g, b] = getPixelColor(sample, overlay, style, planet);
+
+            for (let by = 0; by < step && y + by < exHeight; by++) {
+              for (let bx = 0; bx < step && x + bx < exWidth; bx++) {
+                const idx = ((y + by) * exWidth + (x + bx)) * 4;
+                exData[idx] = r;
+                exData[idx + 1] = g;
+                exData[idx + 2] = b;
+                exData[idx + 3] = 255;
+              }
+            }
+          } else {
+            // Dark space background outside projection boundary
+            for (let by = 0; by < step && y + by < exHeight; by++) {
+              for (let bx = 0; bx < step && x + bx < exWidth; bx++) {
+                const idx = ((y + by) * exWidth + (x + bx)) * 4;
+                exData[idx] = 2;
+                exData[idx + 1] = 6;
+                exData[idx + 2] = 23;
+                exData[idx + 3] = 255;
+              }
+            }
           }
         }
       }
       exCtx.putImageData(exImgData, 0, 0);
 
-      // Add high-res decorative border and cartographic cartouche
-      drawHighResCartouche(exCtx, exWidth, exHeight, planet, overlay, projection);
+      // NO drawHighResCartouche call here! Keeps the map totally clean and watermark-free.
 
-      // Trigger download
-      const dataUrl = exportCanvas.toDataURL('image/png', 0.95);
-      const link = document.createElement('a');
-      link.download = `${planet.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${projection}_${overlay}_highres.png`;
-      link.href = dataUrl;
-      link.click();
+      // Convert to blob and download directly
+      exportCanvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `${planet.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${projection}_${overlay}_clean.png`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+
     } catch (err) {
       console.error('Map export failed:', err);
     } finally {

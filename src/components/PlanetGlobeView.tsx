@@ -48,14 +48,14 @@ export const PlanetGlobeView: React.FC<PlanetGlobeViewProps> = ({
   const [lastMouse, setLastMouse] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   const [showAtmosphere, setShowAtmosphere] = useState<boolean>(true);
-  const [showClouds, setShowClouds] = useState<boolean>(true);
+  const [showClouds, setShowClouds] = useState<boolean>(false); // Was true
   const [cloudOffset, setCloudOffset] = useState<number>(0);
 
   // Real-time Shadow Mask, Axial Tilt & Stellar Position State
   const [enableShadowMask, setEnableShadowMask] = useState<boolean>(true);
   const [shadowDensity, setShadowDensity] = useState<number>(0.92); // 0 = no shadow, 1 = deep dark space shadow
   const [showTerminatorHighlight, setShowTerminatorHighlight] = useState<boolean>(true);
-  const [showTwilightGlow, setShowTwilightGlow] = useState<boolean>(true);
+  const [showTwilightGlow, setShowTwilightGlow] = useState<boolean>(false); // Was true
   const [showNightLights, setShowNightLights] = useState<boolean>(true);
   const [showSubsolarMarker, setShowSubsolarMarker] = useState<boolean>(true);
   const [showAxialTiltLine, setShowAxialTiltLine] = useState<boolean>(true);
@@ -91,18 +91,15 @@ export const PlanetGlobeView: React.FC<PlanetGlobeViewProps> = ({
     let lastTime = performance.now();
 
     const loop = (time: number) => {
+      animationFrameId = requestAnimationFrame(loop);
       const dt = (time - lastTime) / 1000;
-      lastTime = time;
+      if (dt < 0.033) return; // Cap at ~30 FPS to save Chromebook CPU
 
-      // Rotate based on planet's actual rotation speed (day length)
+      lastTime = time;
       const speed = Math.max(0.05, 24 / Math.max(1, planet.rotationPeriodHours)) * 10;
       setRotY((prev) => (prev + speed * dt) % 360);
       setCloudOffset((prev) => (prev + speed * dt * 1.3) % 360);
-
-      // Also gently advance solar time in sync with spin
       setInternalSolarHour((prev) => (prev + (speed * dt) / 15) % 24);
-
-      animationFrameId = requestAnimationFrame(loop);
     };
 
     animationFrameId = requestAnimationFrame(loop);
@@ -223,8 +220,8 @@ export const PlanetGlobeView: React.FC<PlanetGlobeViewProps> = ({
     const minY = Math.max(0, Math.floor(cy - rInt));
     const maxY = Math.min(height - 1, Math.ceil(cy + rInt));
 
-    // Pixel step: 2px blocks for smooth 60fps performance, 1px on smaller canvases
-    const step = compactMode ? 1 : 2;
+    // Render in 4px blocks on normal, 3px in compact mode for massive performance gain
+    const step = compactMode ? 3 : 4;
 
     const imgData = ctx.createImageData(width, height);
     const data = imgData.data;

@@ -706,29 +706,6 @@ function drawHighResCartouche(
   proj: MapProjectionType
 ) {
   ctx.save();
-  // Top Title banner
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-  ctx.fillRect(40, 40, 680, 140);
-  ctx.strokeStyle = '#38bdf8';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(40, 40, 680, 140);
-
-  ctx.font = 'bold 36px "Space Grotesk", sans-serif';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(planet.name.toUpperCase(), 64, 95);
-
-  ctx.font = '18px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#38bdf8';
-  ctx.fillText(`HIGH-PRECISION CARTOGRAPHIC SURVEY • ${overlay.toUpperCase()}`, 64, 130);
-
-  ctx.font = '14px "JetBrains Mono", monospace';
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillText(`PROJECTION: ${proj.toUpperCase()} | RADIUS: ${planet.radiusEarth} R⊕ | GRAVITY: ${planet.surfaceGravityG}g`, 64, 160);
-
-  // Border frame
-  ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-  ctx.lineWidth = 8;
-  ctx.strokeRect(20, 20, width - 40, height - 40);
-
+  
   ctx.restore();
 }

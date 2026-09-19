@@ -1,0 +1,8 @@
+{
+  "name": "Globea - Exoplanet Surface & System Simulator",
+  "description": "Advanced planetary cartography, procedural heightmap sculpting, realistic true satellite rendering, orbital dynamics, and multi-layer environmental analysis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
+

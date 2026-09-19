@@ -165,8 +165,8 @@ export const FlatMapView: React.FC<FlatMapViewProps> = ({
     const imgData = ctx.createImageData(width, height);
     const data = imgData.data;
 
-    // Step size for Chromebook high responsiveness: 2px blocks in realtime
-    const step = 2;
+    // Render in 4px blocks in real-time to cut pixel calculations by 75%
+    const step = 4;
 
     for (let y = 0; y < height; y += step) {
       // Unapply pan and zoom to find map coordinate
@@ -445,7 +445,7 @@ export const FlatMapView: React.FC<FlatMapViewProps> = ({
       const dy = e.clientY - lastPanMouse.y;
       setPan((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
       setLastPanMouse({ x: e.clientX, y: e.clientY });
-      return;
+      return; // Skip hover sampling while dragging
     }
 
     // Calculate Lat/Lon for hover tooltip
